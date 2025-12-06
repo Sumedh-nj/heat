@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Porous Fin LTNE — AGM (Browser Solver)</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+  :root { --bg:#0f1115; --card:#171a21; --ink:#e9eefb; --muted:#9fb2d2; --accent:#6aa5ff; }
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,Segoe UI,Roboto,Arial}
+  header{padding:18px 22px;border-bottom:1px solid #222}
+  h1{margin:0;font-weight:700;font-size:20px}
+  .wrap{display:grid;grid-template-columns:320px 1fr;gap:18px;padding:18px}
+  .card{background:var(--card);border:1px solid #222;border-radius:14px;padding:16px}
+  .row{display:flex;gap:10px;align-items:center;margin:10px 0}
+  .row label{flex:0 0 90px;color:var(--muted)}
+  .row input[type=range]{width:100%}
+  .val{width:88px;text-align:right;color:var(--accent);font-variant-numeric:tabular-nums}
+  .small{color:var(--muted);font-size:12px;margin-top:6px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  button{background:#1e2633;color:#dce7ff;border:1px solid #293248;border-radius:10px;padding:8px 10px;cursor:pointer}
+  button:hover{background:#253043}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  footer{padding:14px 18px;color:#8aa0c9}
+</style>
+</head>
+<body>
+<header>
+  <h1>Porous Fin LTNE — AGM Collocation (θ<sub>f</sub>, θ<sub>s</sub>)</h1>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <div class="row">
+      <label>Bi</label>
+      <input id="bi" type="range" min="1" max="1000" step="1" value="100">
+      <div class="val" id="bi_v">100</div>
+    </div>
+    <div class="row">
+      <label>Ra</label>
+      <input id="ra" type="range" min="0" max="100" step="1" value="50">
+      <div class="val" id="ra_v">50</div>
+    </div>
+    <div class="row">
+      <label>κ (k<sub>s</sub>/k<sub>f</sub>)</label>
+      <input id="kappa" type="range" min="1" max="10000" step="1" value="1000">
+      <div class="val" id="kappa_v">1000</div>
+    </div>
+    <div class="row">
+      <label>α (decay)</label>
+      <input id="alpha" type="range" min="0.2" max="2.0" step="0.01" value="0.86">
+      <div class="val" id="alpha_v">0.86</div>
+    </div>
+
+    <div class="row">
+      <label>m<sub>f</sub> (exp terms)</label>
+      <input id="mf" type="range" min="3" max="16" step="1" value="8">
+      <div class="val" id="mf_v">8</div>
+    </div>
+    <div class="row">
+      <label>m<sub>s</sub> (poly deg)</label>
+      <input id="ms" type="range" min="2" max="10" step="1" value="6">
+      <div class="val" id="ms_v">6</div>
+    </div>
+
+    <div class="row">
+      <button id="run">Solve AGM</button>
+      <button id="reset">Defaults</button>
+    </div>
+
+    <div class="small">
+      Model = linearized LTNE (Rosseland) for browser speed.  
+      BCs: θ<sub>f</sub>(0)=θ<sub>s</sub>(0)=1, θ′<sub>f</sub>(1)=θ′<sub>s</sub>(1)=0.  
+      Nu proxy: <span class="mono">Nu ≈ −θ′<sub>s</sub>(0)</span>.
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><div id="plot_theta" style="height:420px"></div></div>
+    <div class="card"><div id="plot_nu" style="height:420px"></div></div>
+  </div>
+</div>
+
+<footer>
+  AGM trial: θ<sub>f</sub>=∑ a<sub>i</sub>e<sup>−α i x</sup>, θ<sub>s</sub>=∑ b<sub>i</sub>x<sup>i</sup>. Residuals collocated at Chebyshev nodes, solved by Gaussian elimination.
+</footer>
+
+<script>
+/* ------------------------------
+   Tiny utilities
+--------------------------------*/
+const linspace = (a,b,n) => Array.from({length:n},(_,i)=> a+(b-a)*i/(n-1));
+function chebyshevNodes(n){ // in (0,1)
+  // Chebyshev-Gauss nodes mapped from (-1,1) to (0,1)
+  const xs=[];
+  for(let k=1;k<=n;k++){
+    const z = Math.cos((2*k-1)/(2*n)*Math.PI); // (-1,1)
+    xs.push(0.5*(1+z));                         // (0,1)
+  }
+  xs.sort((p,q)=>p-q);
+  return xs;
+}
+// Simple dense linear solve Ax=b by Gaussian elimination with partial pivoting
+function solveLinear(A,b){
+  const n=A.length;
+  // augment
+  for(let i=0;i<n;i++) A[i]=A[i].slice().concat([b[i]]);
+  // elimination
+  for(let col=0; col<n; col++){
+    // pivot
+    let piv=col, mx=Math.abs(A[col][col]);
+    for(let r=col+1;r<n;r++){ const v=Math.abs(A[r][col]); if(v>mx){mx=v;piv=r;} }
+    if(mx<1e-14) throw new Error("Singular system");
+    if(piv!==col){ const t=A[piv]; A[piv]=A[col]; A[col]=t; }
+    // normalize pivot row
+    const pv=A[col][col];
+    for(let j=col;j<=n;j++) A[col][j]/=pv;
+    // eliminate other rows
+    for(let r=0;r<n;r++){
+      if(r===col) continue;
+      const f=A[r][col];
+      if(Math.abs(f)<1e-15) continue;
+      for(let j=col;j<=n;j++) A[r][j]-=f*A[col][j];
+    }
+  }
+  // read solution
+  return A.map(row=>row[n]);
+}
+
+/* ------------------------------
+   Physics knobs (dimensionless)
+   We keep a linearized LTNE form:
+     φ kf θf'' = H (θs - θf) + Sf θf
+     Keff θs'' = H (θf - θs) - E θs
+   with H ~ Bi, Sf ~ Ra, Keff ~ κ + radiation bump, E ~ external loss
+--------------------------------*/
+function modelParams(Bi, Ra, kappa){
+  const phi   = 0.92;              // porosity
+  const rdEff = 0.1;               // internal radiation parameter (folded into Keff)
+  const R1    = 0.3;               // external radiation/convection lumped
+  const kf    = 1.0;               // nondim
+  const ks    = kappa*kf;
+  const Keff  = (1-phi)*ks + 16*rdEff/3;   // Rosseland-like bump
+  const H     = Bi*0.1;                    // interfacial exchange scale
+  const Sf    = Ra*0.02;                   // buoyancy linearization
+  const E     = R1*0.2;                    // external sink on solid
+  return {phi,kf,Keff,H,Sf,E};
+}
+
+/* ------------------------------
+   AGM trial functions
+--------------------------------*/
+function buildAGM(Bi,Ra,kappa,alpha,mf,ms){
+  const {phi,kf,Keff,H,Sf,E} = modelParams(Bi,Ra,kappa);
+
+  // Unknowns: a0..a_{mf} and b0..b_{ms}
+  // Enforce BCs to reduce unknowns:
+  // θf(0)=1 => sum a_i = 1
+  // θs(0)=1 => b0 = 1
+  // θf'(1)=0 => sum a_i*(-α i) e^{-α i} = 0
+  // θs'(1)=0 => sum_{i>=1} i b_i = 0
+  // We'll impose BCs as collocation equations as well to keep the code uniform.
+
+  const nf = mf+1, ns = ms+1;
+  const nUnknown = nf + ns; // all coefficients
+  const nCol = Math.max(nUnknown, 2*(mf+ms)+6); // generous equations
+
+  // Collocation points in (0,1)
+  const xs = chebyshevNodes(Math.max(8, Math.ceil(nCol/2)));
+
+  // Basis evaluators
+  const ef = (i,x) => Math.exp(-alpha*i*x);
+  const ef_d2 = (i,x) => (alpha*alpha*i*i)*Math.exp(-alpha*i*x) * (-1); // second derivative of e^{-α i x} is (α i)^2 e^{-α i x} times +1? Careful:
+  // d/dx e^{-α i x} = -(α i) e^{-α i x}
+  // d2/dx2 e^{-α i x} = (α i)^2 e^{-α i x}
+  // So it's positive. Fix:
+  const ef_d2_pos = (i,x) => (alpha*alpha*i*i)*Math.exp(-alpha*i*x);
+
+  const ps = (i,x) => Math.pow(x,i);
+  const ps_d2 = (i,x) => i>=2 ? (i*(i-1))*Math.pow(x,i-2) : 0;
+
+  // Build linear system A*coeff = b enforcing residuals and BCs
+  // Unknown vector: [a0..a_mf, b0..b_ms]
+  const A=[], b=[];
+  function pushEq(row, rhs){ A.push(row); b.push(rhs); }
+
+  // 1) Fluid ODE residuals at collocation nodes: φ kf θf'' - H(θs-θf) - Sf θf = 0
+  for(const x of xs){
+    const row = new Array(nUnknown).fill(0);
+    // θf'' term
+    for(let i=0;i<nf;i++) row[i] += phi*kf * ef_d2_pos(i,x);
+    // -H(θs - θf) term => -H*θs + H*θf
+    for(let i=0;i<nf;i++) row[i] += H * ef(i,x);
+    for(let j=0;j<ns;j++) row[nf+j] += -H * ps(j,x);
+    // -Sf θf term
+    for(let i=0;i<nf;i++) row[i] += -Sf * ef(i,x);
+    pushEq(row, 0);
+  }
+
+  // 2) Solid ODE residuals at collocation nodes: Keff θs'' - H(θf-θs) + E θs = 0
+  for(const x of xs){
+    const row = new Array(nUnknown).fill(0);
+    // Keff θs''
+    for(let j=0;j<ns;j++) row[nf+j] += Keff * ps_d2(j,x);
+    // -H(θf - θs) => -H θf + H θs
+    for(let i=0;i<nf;i++) row[i] += -H * ef(i,x);
+    for(let j=0;j<ns;j++) row[nf+j] += H * ps(j,x);
+    // + E θs
+    for(let j=0;j<ns;j++) row[nf+j] += E * ps(j,x);
+    pushEq(row, 0);
+  }
+
+  // 3) Boundary conditions as exact equations
+  // θf(0)=1 : sum a_i = 1
+  {
+    const row=new Array(nUnknown).fill(0);
+    for(let i=0;i<nf;i++) row[i]+=1;
+    pushEq(row,1);
+  }
+  // θs(0)=1 : b0 = 1
+  {
+    const row=new Array(nUnknown).fill(0);
+    row[nf+0]=1;
+    pushEq(row,1);
+  }
+  // θf'(1)=0 : sum a_i*(-α i) e^{-α i} = 0
+  {
+    const row=new Array(nUnknown).fill(0);
+    for(let i=0;i<nf;i++){
+      const d = -(alpha*i)*Math.exp(-alpha*i*1.0);
+      row[i]+=d;
+    }
+    pushEq(row,0);
+  }
+  // θs'(1)=0 : sum_{i>=1} i b_i = 0
+  {
+    const row=new Array(nUnknown).fill(0);
+    for(let j=1;j<ns;j++) row[nf+j]+=j;
+    pushEq(row,0);
+  }
+
+  // Solve
+  // If overdetermined, use normal equations A^T A c = A^T b
+  let c;
+  if(A.length===nUnknown){
+    c = solveLinear(A.map(r=>r.slice()), b.slice());
+  } else {
+    // build normal equations
+    const m=A.length, n=nUnknown;
+    const ATA = Array.from({length:n},()=>Array(n).fill(0));
+    const ATb = Array(n).fill(0);
+    for(let i=0;i<m;i++){
+      const r=A[i], bi=b[i];
+      for(let p=0;p<n;p++){
+        ATb[p]+=r[p]*bi;
+        for(let q=0;q<n;q++){
+          ATA[p][q]+=r[p]*r[q];
+        }
+      }
+    }
+    c = solveLinear(ATA, ATb);
+  }
+
+  // Split coefficients
+  const a = c.slice(0,nf);
+  const d = c.slice(nf);
+
+  // Return evaluators
+  function theta_f(x){
+    let s=0;
+    for(let i=0;i<nf;i++) s += a[i]*Math.exp(-alpha*i*x);
+    return s;
+  }
+  function theta_s(x){
+    let s=0;
+    for(let j=0;j<ns;j++) s += d[j]*Math.pow(x,j);
+    return s;
+  }
+  function dtheta_s_dx(x){
+    let s=0;
+    for(let j=1;j<ns;j++) s += j*d[j]*Math.pow(x,j-1);
+    return s;
+  }
+
+  return {theta_f, theta_s, dtheta_s_dx, a, d};
+}
+
+/* ------------------------------
+   Plotting
+--------------------------------*/
+function update(){
+  const Bi     = +document.getElementById("bi").value;
+  const Ra     = +document.getElementById("ra").value;
+  const kappa  = +document.getElementById("kappa").value;
+  const alpha  = +document.getElementById("alpha").value;
+  const mf     = +document.getElementById("mf").value;
+  const ms     = +document.getElementById("ms").value;
+
+  document.getElementById("bi_v").textContent=Bi;
+  document.getElementById("ra_v").textContent=Ra;
+  document.getElementById("kappa_v").textContent=kappa;
+  document.getElementById("alpha_v").textContent=alpha.toFixed(2);
+  document.getElementById("mf_v").textContent=mf;
+  document.getElementById("ms_v").textContent=ms;
+
+  const agm = buildAGM(Bi,Ra,kappa,alpha,mf,ms);
+  const x = linspace(0,1,201);
+  const yf = x.map(agm.theta_f);
+  const ys = x.map(agm.theta_s);
+
+  // base flux proxy (dimensionless Nusselt)
+  const Nu = -agm.dtheta_s_dx(0);
+
+  Plotly.newPlot("plot_theta", [
+    {x, y:yf, name:"θf (fluid)", mode:"lines"},
+    {x, y:ys, name:"θs (solid)", mode:"lines"}
+  ], {
+    paper_bgcolor:'transparent', plot_bgcolor:'transparent',
+    margin:{l:50,r:10,t:10,b:40},
+    xaxis:{title:'x', gridcolor:'#2a3242', color:'#cfe0ff'},
+    yaxis:{title:'θ', gridcolor:'#2a3242', color:'#cfe0ff'},
+    legend:{font:{color:'#cfe0ff'}}
+  }, {displayModeBar:false});
+
+  // quick Nu vs Ra sweep at the current Bi,kappa,alpha (for a sparkline)
+  const Ras = linspace(0,100,41);
+  const Nus = Ras.map(RA => -buildAGM(Bi,RA,kappa,alpha,mf,ms).dtheta_s_dx(0));
+  Plotly.newPlot("plot_nu", [
+    {x:Ras, y:Nus, name:"Nu vs Ra", mode:"lines+markers"}
+  ], {
+    paper_bgcolor:'transparent', plot_bgcolor:'transparent',
+    margin:{l:60,r:10,t:10,b:40},
+    xaxis:{title:'Ra', gridcolor:'#2a3242', color:'#cfe0ff'},
+    yaxis:{title:'Nu ≈ -θ′_s(0)', gridcolor:'#2a3242', color:'#cfe0ff'},
+    annotations:[{x:Ra,y:Nu, text:`Current Nu ≈ ${Nu.toFixed(3)}`, xanchor:'left', ax:20, ay:-30, font:{color:'#9fd1ff'}}]
+  }, {displayModeBar:false});
+}
+
+document.getElementById("run").onclick = update;
+document.getElementById("reset").onclick = () => {
+  ["bi","ra","kappa","alpha","mf","ms"].forEach(id=>{
+    const el=document.getElementById(id);
+    el.value=({bi:100, ra:50, kappa:1000, alpha:0.86, mf:8, ms:6}[id]);
+  });
+  update();
+};
+
+["bi","ra","kappa","alpha","mf","ms"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", update);
+});
+
+update();
+</script>
+</body>
+</html>
