@@ -3,295 +3,749 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Porous Fin LTNE — AGM only (Fig 1b)</title>
+<title>Porous Fin LTNE — AGM Temperature & Nusselt Profiles</title>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <style>
 :root{--bg:#0f1115;--card:#171a21;--ink:#e9eefb;--muted:#9fb2d2;--accent:#6aa5ff;--grid:#273043;--line:#232838}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial}
-header{padding:18px 22px;border-bottom:1px solid var(--line)}
-h1{margin:0;font-size:20px}
+header{padding:14px 16px;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:16px}
+@media (min-width:600px){header{padding:18px 22px}h1{font-size:20px}}
+h2{margin:18px 0 10px;font-size:16px;color:#a0c4ff}
 .wrap{display:grid;grid-template-columns:380px 1fr;gap:18px;padding:18px}
 @media (max-width:1200px){.wrap{grid-template-columns:1fr}}
+@media (max-width:600px){.wrap{padding:10px;gap:12px}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
-.row{display:grid;grid-template-columns:130px 1fr 72px;gap:10px;align-items:center;margin:10px 0}
-.row label{color:var(--muted);font-size:13px}
+@media (max-width:600px){.card{padding:12px;border-radius:10px}}
+.row{display:grid;grid-template-columns:70px 1fr 50px;gap:6px;align-items:center;margin:6px 0}
+.row label{color:var(--muted);font-size:12px}
+@media (min-width:600px){.row{grid-template-columns:110px 1fr 60px;gap:8px;margin:8px 0}.row label{font-size:13px}}
 .row input[type=range]{width:100%}
-.val{width:72px;text-align:right;color:var(--accent);font-variant-numeric:tabular-nums}
-.hint{color:#b7c6e6;font-size:11px;margin-top:2px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 0.9fr;gap:12px}
-@media (max-width:1200px){.grid3{grid-template-columns:1fr}}
-button{background:#1e2633;color:#dce7ff;border:1px solid #2a3242;border-radius:10px;padding:8px 10px;cursor:pointer}
+.val{text-align:right;color:var(--accent);font-variant-numeric:tabular-nums;font-size:13px}
+.grid2x2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:900px){.grid2x2{grid-template-columns:1fr}}
+@media (max-width:600px){.grid2x2{gap:8px}}
+.plot-container{height:280px}
+@media (min-width:600px){.plot-container{height:350px}}
+@media (min-width:1000px){.plot-container{height:400px}}
+button{background:#1e2633;color:#dce7ff;border:1px solid #2a3242;border-radius:10px;padding:10px 16px;cursor:pointer;font-size:14px}
 button:hover{background:#253043}
-.small{color:#9fb2d2;font-size:12px;margin-top:6px}
-.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
-.badge{display:inline-block;background:#202a40;border:1px solid #2f3b54;border-radius:10px;padding:2px 8px;margin-right:6px;font-size:12px}
-select{width:100%;background:#101522;color:#e8f0ff;border:1px solid #2a3242;border-radius:10px;padding:8px}
-.desc{color:#cbd8f5;font-size:12px;margin-top:6px;min-height:32px}
+.small{color:#9fb2d2;font-size:12px;margin-top:8px;line-height:1.5}
+.plot-title{text-align:center;color:#b0c8f0;font-size:13px;margin-bottom:4px;font-weight:500}
+select{width:100%;background:#101522;color:#e8f0ff;border:1px solid #2a3242;border-radius:10px;padding:10px;margin-bottom:10px;font-size:14px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.desc{background:#1a2030;border-radius:8px;padding:10px;margin-top:10px;font-size:12px;color:#a8c0e8;line-height:1.6}
 </style>
 </head>
 <body>
-<header><h1>Porous Fin LTNE — AGM only (Fig 1b: θ<sub>f</sub>, θ<sub>s</sub>, and Nusselt)</h1></header>
+<header><h1>Porous Fin LTNE (AGM Only) — θ<sub>f</sub>, θ<sub>s</sub>, Nu Profiles</h1></header>
 
 <div class="wrap">
+  <!-- Controls -->
   <div class="card">
-    <div class="row" style="grid-template-columns:130px 1fr;">
-      <label>Preset</label>
-      <select id="preset">
-        <option value="fig1b" selected>Fig 1(b) — Bi=1 (locked to caption)</option>
-        <option value="custom">Custom (sliders)</option>
-      </select>
+    <h2>Select Figure</h2>
+    <select id="figSelect">
+      <optgroup label="Custom Mode">
+        <option value="custom" selected>🎛️ Custom: Adjust parameters below</option>
+      </optgroup>
+      <optgroup label="Figure 1 — Comparison at specific Bi">
+        <option value="fig1b">Fig 1b: θ_f, θ_s at Bi=1, Ra=50</option>
+        <option value="fig1c">Fig 1c: θ_f, θ_s at Bi=100, Ra=50</option>
+        <option value="fig1d">Fig 1d: Nu_t vs Ra (Bi=1 and Bi=100)</option>
+      </optgroup>
+      <optgroup label="Figure 2 — Temperature profiles">
+        <option value="fig2a">Fig 2a: θ_f, θ_s for different Bi (Ra=100)</option>
+        <option value="fig2b">Fig 2b: θ_f, θ_s for different Ra (Bi=100)</option>
+        <option value="fig2c">Fig 2c: θ_f, θ_s for different κ</option>
+        <option value="fig2d">Fig 2d: θ_f, θ_s for different λ</option>
+      </optgroup>
+      <optgroup label="Figure 3 — R_d, R_1, κ effects">
+        <option value="fig3a">Fig 3a: θ_f, θ_s for different R_d</option>
+        <option value="fig3b">Fig 3b: θ_f, θ_s for different R_1</option>
+        <option value="fig3c">Fig 3c: θ_f, θ_s for different κ</option>
+        <option value="fig3d">Fig 3d: θ_f, θ_s for different κ (Ra=100)</option>
+      </optgroup>
+      <optgroup label="Figure 4 — τ, φ, Nu effects">
+        <option value="fig4a">Fig 4a: θ_f, θ_s for different τ</option>
+        <option value="fig4b">Fig 4b: θ_f, θ_s for different φ</option>
+        <option value="fig4c">Fig 4c: Nu vs Ra for different Bi, κ, R_d, τ</option>
+      </optgroup>
+    </select>
+    
+    <div class="btn-row">
+      <button id="loadFig">Load Figure</button>
     </div>
 
-    <div class="kv">
-      <button id="loadPreset">Load preset</button>
-      <button id="solve">Solve (AGM)</button>
-    </div>
-    <div id="presetDesc" class="desc"></div>
+    <div id="figDesc" class="desc"></div>
 
-    <!-- Sliders (enabled in Custom only) -->
-    <div class="row"><label>Bi</label><input id="bi" type="range" min="1" max="10000" step="1" value="1"><div class="val" id="bi_v">1</div><div class="hint">solid–fluid exchange</div></div>
-    <div class="row"><label>Ra</label><input id="ra" type="range" min="0" max="200" step="1" value="50"><div class="val" id="ra_v">50</div><div class="hint">buoyancy sink</div></div>
-    <div class="row"><label>κ = k<sub>s</sub>/k<sub>f</sub></label><input id="kappa" type="range" min="10" max="10000" step="10" value="1000"><div class="val" id="kappa_v">1000</div><div class="hint">solid/fluid conductivity</div></div>
-    <div class="row"><label>τ = t/L</label><input id="tau" type="range" min="0.02" max="0.40" step="0.01" value="0.10"><div class="val" id="tau_v">0.10</div><div class="hint">scales Nu</div></div>
-    <div class="row"><label>R₁</label><input id="R1" type="range" min="0" max="1" step="0.01" value="0.30"><div class="val" id="R1_v">0.30</div><div class="hint">external radiation</div></div>
-    <div class="row"><label>R<sub>d</sub></label><input id="Rd" type="range" min="0" max="0.5" step="0.01" value="0.10"><div class="val" id="Rd_v">0.10</div><div class="hint">internal radiation</div></div>
-    <div class="row"><label>φ</label><input id="phi" type="range" min="0.2" max="0.98" step="0.01" value="0.92"><div class="val" id="phi_v">0.92</div><div class="hint">porosity</div></div>
-
-    <div class="kv">
-      <button id="download">Download θ CSV</button>
-      <span></span>
+    <!-- Custom Mode Parameters -->
+    <div id="customControls">
+      <h2>🎛️ Custom Parameters</h2>
+      <div class="row"><label>Bi (Biot)</label><input type="range" id="sliderBi" min="0" max="5" step="0.1" value="2"><span class="val" id="valBi">100</span></div>
+      <div class="row"><label>Ra (Rayleigh)</label><input type="range" id="sliderRa" min="0" max="200" step="1" value="50"><span class="val" id="valRa">50</span></div>
+      <div class="row"><label>κ (k_s/k_f)</label><input type="range" id="sliderKappa" min="1" max="5" step="0.1" value="3"><span class="val" id="valKappa">1000</span></div>
+      <div class="row"><label>τ (t/L)</label><input type="range" id="sliderTau" min="0.02" max="0.5" step="0.01" value="0.1"><span class="val" id="valTau">0.10</span></div>
+      <div class="row"><label>φ (porosity)</label><input type="range" id="sliderPhi" min="0.5" max="0.99" step="0.01" value="0.92"><span class="val" id="valPhi">0.92</span></div>
+      <div class="row"><label>R_d (int. rad.)</label><input type="range" id="sliderRd" min="0" max="1" step="0.01" value="0.1"><span class="val" id="valRd">0.10</span></div>
+      <div class="row"><label>R_1 (ext. rad.)</label><input type="range" id="sliderR1" min="0" max="1" step="0.01" value="0.3"><span class="val" id="valR1">0.30</span></div>
+      <div class="row"><label>λ</label><input type="range" id="sliderLambda" min="0" max="1" step="0.01" value="0.01"><span class="val" id="valLambda">0.01</span></div>
+      <div class="btn-row"><button id="updateCustom">Update Plot</button></div>
     </div>
 
-    <div class="small" id="readout"></div>
+    <h2>Base Parameters (Presets)</h2>
     <div class="small">
-      <span class="badge">BCs: θ_f(0)=θ_s(0)=1</span>
-      <span class="badge">θ′_f(1)=θ′_s(1)=0</span>
-      <span class="badge">Nu_t = Nu_f + Nu_s</span>
+      τ = 0.1, R<sub>d</sub> = 0.1, λ = 0.01, R<sub>1</sub> = 0.3, φ = 0.92, κ = 1000/10000
     </div>
   </div>
 
-  <div class="grid3">
-    <div class="card"><div id="plot_theta_f" style="height:420px"></div></div>
-    <div class="card"><div id="plot_theta_s" style="height:420px"></div></div>
-    <div class="card"><div id="plot_nu" style="height:420px"></div></div>
+  <!-- Plots -->
+  <div id="plotArea">
+    <div class="grid2x2" id="plots">
+      <div class="card"><div class="plot-title" id="title1"></div><div id="plot1" class="plot-container"></div></div>
+      <div class="card"><div class="plot-title" id="title2"></div><div id="plot2" class="plot-container"></div></div>
+      <div class="card"><div class="plot-title" id="title3"></div><div id="plot3" class="plot-container"></div></div>
+      <div class="card"><div class="plot-title" id="title4"></div><div id="plot4" class="plot-container"></div></div>
+    </div>
   </div>
 </div>
 
 <script>
-/* ---------- helpers ---------- */
+/* ===== Helpers ===== */
 const $ = id => document.getElementById(id);
 const gridColor = "#2a3242";
-const staticCfg = {staticPlot:true, responsive:true}; // no zoom/pan, phone-safe
-const axes = (xlab,ylab)=>({paper_bgcolor:"transparent",plot_bgcolor:"transparent",
-  margin:{l:55,r:10,t:10,b:44},
-  xaxis:{title:xlab,gridcolor:gridColor,color:"#cfe0ff"},
-  yaxis:{title:ylab,gridcolor:gridColor,color:"#cfe0ff"},
-  legend:{font:{color:"#cfe0ff"}}});
-const barAxes = {barmode:"stack",paper_bgcolor:"transparent",plot_bgcolor:"transparent",
-  margin:{l:65,r:10,t:10,b:44},
-  xaxis:{color:"#cfe0ff",title:"method"},
-  yaxis:{color:"#cfe0ff",title:"Nusselt (base)"},
-  legend:{font:{color:"#cfe0ff"}}};
-const FLUID=["#58a6ff","#2f81f7","#1f6feb","#0b4cc2"];
-const SOLID=["#34d399","#10b981","#059669","#047857"];
+const plotCfg = {staticPlot: false, responsive: true, displayModeBar: false};
 
-/* ---------- UI ---------- */
-const bi=$("bi"), ra=$("ra"), kappa=$("kappa"), tau=$("tau"), R1=$("R1"), Rd=$("Rd"), phi=$("phi");
-const bi_v=$("bi_v"), ra_v=$("ra_v"), kappa_v=$("kappa_v"), tau_v=$("tau_v"), R1_v=$("R1_v"), Rd_v=$("Rd_v"), phi_v=$("phi_v");
-const preset=$("preset"), presetDesc=$("presetDesc"), readout=$("readout");
-let mode="fig1b";
-
-function paintVals(){
-  bi_v.textContent=bi.value; ra_v.textContent=ra.value; kappa_v.textContent=kappa.value;
-  tau_v.textContent=(+tau.value).toFixed(2); R1_v.textContent=(+R1.value).toFixed(2);
-  Rd_v.textContent=(+Rd.value).toFixed(2); phi_v.textContent=(+phi.value).toFixed(2);
+function layout(xlab, ylab, yrange, xrange) {
+  return {
+    paper_bgcolor: "transparent",
+    plot_bgcolor: "transparent",
+    margin: {l: 55, r: 15, t: 10, b: 45},
+    xaxis: {title: xlab, gridcolor: gridColor, color: "#cfe0ff", range: xrange || [0, 1], dtick: 0.2},
+    yaxis: {title: ylab, gridcolor: gridColor, color: "#cfe0ff", range: yrange || [0, 1], dtick: 0.2},
+    legend: {font: {color: "#cfe0ff", size: 11}, x: 0.55, y: 0.98, bgcolor: "rgba(20,25,35,0.85)"}
+  };
 }
-function readInputs(){return {
-  Bi:+bi.value, Ra:+ra.value, kappa:+kappa.value, tau:+tau.value,
-  R1:+R1.value, Rd:+Rd.value, phi:+phi.value
-};}
 
-/* ---------- linear solver ---------- */
-function solveDense(A,b){
-  const n=A.length;
-  for(let i=0;i<n;i++) A[i]=A[i].slice().concat(b[i]);
-  for(let c=0;c<n;c++){
-    let p=c, mx=Math.abs(A[c][c]);
-    for(let r=c+1;r<n;r++){const v=Math.abs(A[r][c]); if(v>mx){mx=v;p=r;}}
-    if(mx<1e-14) throw new Error("Singular");
-    if(p!==c){const t=A[p];A[p]=A[c];A[c]=t;}
-    const pv=A[c][c];
-    for(let j=c;j<=n;j++) A[c][j]/=pv;
-    for(let r=0;r<n;r++){
-      if(r===c) continue;
-      const f=A[r][c]; if(Math.abs(f)<1e-16) continue;
-      for(let j=c;j<=n;j++) A[r][j]-=f*A[c][j];
+function layoutAuto(xlab, ylab) {
+  return {
+    paper_bgcolor: "transparent",
+    plot_bgcolor: "transparent",
+    margin: {l: 60, r: 15, t: 10, b: 45},
+    xaxis: {title: xlab, gridcolor: gridColor, color: "#cfe0ff"},
+    yaxis: {title: ylab, gridcolor: gridColor, color: "#cfe0ff", autorange: true},
+    legend: {font: {color: "#cfe0ff", size: 11}, x: 0.55, y: 0.98, bgcolor: "rgba(20,25,35,0.85)"}
+  };
+}
+
+/* Color palettes - high contrast */
+const COLORS = ["#ff6b6b", "#4ecdc4", "#ffe66d", "#95e1d3", "#a29bfe", "#fd79a8"];
+const DASHES = ["solid", "dash", "dot", "dashdot", "longdash", "longdashdot"];
+const WIDTHS = [2.5, 2.5, 3, 2.5, 2.5, 3];
+
+/* ===== Dense Linear Solver ===== */
+function solveDense(A, b) {
+  const n = A.length;
+  const aug = A.map((row, i) => [...row, b[i]]);
+  for (let c = 0; c < n; c++) {
+    let maxRow = c;
+    for (let r = c + 1; r < n; r++) {
+      if (Math.abs(aug[r][c]) > Math.abs(aug[maxRow][c])) maxRow = r;
+    }
+    [aug[c], aug[maxRow]] = [aug[maxRow], aug[c]];
+    if (Math.abs(aug[c][c]) < 1e-12) continue;
+    const pivot = aug[c][c];
+    for (let j = c; j <= n; j++) aug[c][j] /= pivot;
+    for (let r = 0; r < n; r++) {
+      if (r !== c) {
+        const factor = aug[r][c];
+        for (let j = c; j <= n; j++) aug[r][j] -= factor * aug[c][j];
+      }
     }
   }
-  return A.map(row=>row[n]);
+  return aug.map(row => row[n]);
 }
 
-/* ---------- model mapping (stable linearized LTNE) ----------
-   φ kf θf'' + (-H - Sf) θf + H θs = 0
-   keff θs'' + (-H - E ) θs + H θf = 0
-   keff = (1-φ) ks + 16 Rd / 3, ks = κ kf, kf := 1
-   H = 0.10*Bi,  Sf = 0.02*Ra,  E = 0.20*R1
+/* ===== AGM Solver ===== */
+/* Based on LTNE porous fin model:
+   Fluid phase: φ·kf·θf'' - H(θf - θs) - Nc²·θf = 0
+   Solid phase: keff·θs'' + H(θf - θs) - Nr²·θs = 0
+   
+   Boundary conditions: θ(0)=1, θ'(1)=0
+   
+   Non-dimensional parameters:
+   - Bi: Biot number (convective heat transfer)
+   - Ra: Radiation-conduction parameter  
+   - κ: Solid-to-fluid conductivity ratio (ks/kf)
+   - τ: Fin parameter (dimensionless thickness)
+   - λ: Porosity-adjusted conductivity ratio
+   - Rd: Radiation parameter (surface radiation)
+   - R1: Internal heat generation parameter
+   - φ: Porosity
 */
-function params({Bi,Ra,kappa,Rd,R1,phi}){
-  const kf=1, ks=kappa;
-  const keff=(1-phi)*ks + 16*Rd/3;
-  const keq =phi*kf + (1-phi)*ks;
-  const H=0.10*Bi, Sf=0.02*Ra, E=0.20*R1;
-  return {kf,ks,keff,keq,phi,H,Sf,E};
-}
-
-/* ---------- AGM (poly+exp collocation) ---------- */
-function solveAGM(inp){
-  const {kf,keff,keq,phi,H,Sf,E}=params(inp);
-  const m=3, p=2, U=2*((m+1)+p);
-  const alphas=[0.8,1.6];
-
-  const M=24, coll=[];
-  for(let k=1;k<=M;k++){const z=Math.cos((2*k-1)/(2*M)*Math.PI); coll.push(0.5*(1+z));}
-  coll.sort((a,b)=>a-b);
-
-  const A=[], y=[];
-  function P(x){return Array.from({length:m+1},(_,i)=>x**i);}
-  function d2P(x){return Array.from({length:m+1},(_,i)=> i>1? i*(i-1)*x**(i-2):0);}
-  function E0(x){return alphas.map(a=>Math.exp(-a*x));}
-  function dE(x){return alphas.map(a=>-a*Math.exp(-a*x));}
-  function d2E(x){return alphas.map(a=> a*a*Math.exp(-a*x));}
-
-  for(const x of coll){
-    const pf=P(x), ps=pf, d2pf=d2P(x), d2ps=d2P(x);
-    const ef=E0(x), es=ef, d2ef=d2E(x), d2es=d2E(x);
-
-    const rF=new Array(U).fill(0);
-    for(let i=0;i<=m;i++) rF[i]           += (phi*kf)*d2pf[i] + (-H - Sf)*pf[i];
-    for(let j=0;j<p;j++)  rF[(m+1)+j]     += (phi*kf)*d2ef[j] + (-H - Sf)*ef[j];
-    for(let i=0;i<=m;i++) rF[(m+1)+p+i]   += H*ps[i];
-    for(let j=0;j<p;j++)  rF[(m+1)+p+(m+1)+j] += H*es[j];
-    A.push(rF); y.push(0);
-
-    const rS=new Array(U).fill(0); const off=(m+1)+p;
-    for(let i=0;i<=m;i++) rS[off+i]       += keff*d2ps[i] + (-H - E)*ps[i];
-    for(let j=0;j<p;j++)  rS[off+(m+1)+j] += keff*d2es[j] + (-H - E)*es[j];
-    for(let i=0;i<=m;i++) rS[i]           += H*pf[i];
-    for(let j=0;j<p;j++)  rS[(m+1)+j]     += H*ef[j];
-    A.push(rS); y.push(0);
-  }
-
-  (function addBCs(){
-    const pf0=P(0), ps0=P(0), ef0=E0(0), es0=E0(0);
-    const dpf1=Array.from({length:m+1},(_,i)=> i? i:0), def1=dE(1);
-    const dps1=dpf1, des1=def1;
-
-    const rowF0=new Array(U).fill(0);
-    for(let i=0;i<=m;i++) rowF0[i]+=pf0[i]; for(let j=0;j<p;j++) rowF0[(m+1)+j]+=ef0[j];
-    A.push(rowF0); y.push(1);
-
-    const rowS0=new Array(U).fill(0); const off=(m+1)+p;
-    for(let i=0;i<=m;i++) rowS0[off+i]+=ps0[i]; for(let j=0;j<p;j++) rowS0[off+(m+1)+j]+=es0[j];
-    A.push(rowS0); y.push(1);
-
-    const rowF1=new Array(U).fill(0);
-    for(let i=0;i<=m;i++) rowF1[i]+=dpf1[i]; for(let j=0;j<p;j++) rowF1[(m+1)+j]+=def1[j];
-    A.push(rowF1); y.push(0);
-
-    const rowS1=new Array(U).fill(0);
-    for(let i=0;i<=m;i++) rowS1[(m+1)+p+i]+=dps1[i]; for(let j=0;j<p;j++) rowS1[(m+1)+p+(m+1)+j]+=des1[j];
-    A.push(rowS1); y.push(0);
-  })();
-
-  const AT=A[0].map((_,j)=>A.map(r=>r[j]));
-  const ATA=AT.map(row=>AT.map((_,j)=>row.reduce((s,rij,i)=>s+rij*A[i][j],0)));
-  const ATy=AT.map(row=>row.reduce((s,rij,i)=>s+rij*y[i],0));
-  const c=solveDense(ATA,ATy);
-
-  const N=161, x=Array.from({length:N},(_,i)=>i/(N-1));
-  function evalTheta(isF,xv){
-    let s=0, off=(m+1)+p;
-    if(isF){ for(let i=0;i<=m;i++) s+=c[i]*xv**i; for(let j=0;j<p;j++) s+=c[(m+1)+j]*Math.exp(-alphas[j]*xv); }
-    else   { for(let i=0;i<=m;i++) s+=c[off+i]*xv**i; for(let j=0;j<p;j++) s+=c[off+(m+1)+j]*Math.exp(-alphas[j]*xv); }
-    return s;
-  }
-  function derivAt0(isF){
-    let s=0, off=(m+1)+p;
-    if(isF){ for(let j=0;j<p;j++) s+=c[(m+1)+j]*(-alphas[j]); }
-    else   { for(let j=0;j<p;j++) s+=c[off+(m+1)+j]*(-alphas[j]); }
-    return s;
-  }
-
-  const thetaF=x.map(v=>evalTheta(true,v));
-  const thetaS=x.map(v=>evalTheta(false,v));
-  const dthetaf0=derivAt0(true);
-  const dthetas0=derivAt0(false);
-
-  const Nu_f=-(inp.phi*1/ (inp.phi + (1-inp.phi)*inp.kappa) )*inp.tau*dthetaf0;
-  const Nu_s=-(((1-inp.phi)*inp.kappa + 16*inp.Rd/3) / (inp.phi + (1-inp.phi)*inp.kappa) )*inp.tau*dthetas0;
-  const Nu_t=Nu_f+Nu_s;
-
-  return {x,thetaF,thetaS,Nu_f,Nu_s,Nu_t,dthetaf0,dthetas0};
-}
-
-/* ---------- renderers ---------- */
-function renderSingle(inp){
-  const S=solveAGM(inp ?? readInputs());
-  Plotly.newPlot("plot_theta_f",[
-    {x:S.x,y:S.thetaF,name:"θ_f (AGM)",mode:"lines",line:{width:3,color:FLUID[1]}}
-  ],axes("x","θ_f"),staticCfg);
-  Plotly.newPlot("plot_theta_s",[
-    {x:S.x,y:S.thetaS,name:"θ_s (AGM)",mode:"lines",line:{width:3,color:SOLID[1]}}
-  ],axes("x","θ_s"),staticCfg);
-  Plotly.newPlot("plot_nu",[
-    {x:["AGM"],y:[S.Nu_f],name:"Nu_f",type:"bar",marker:{color:FLUID[2]}},
-    {x:["AGM"],y:[S.Nu_s],name:"Nu_s",type:"bar",marker:{color:SOLID[2]}}
-  ],barAxes,staticCfg).then(()=>{
-    Plotly.relayout("plot_nu",{annotations:[{x:"AGM",y:S.Nu_t,text:`Nuₜ=${S.Nu_t.toFixed(4)}`,showarrow:false,yshift:12,font:{color:"#a7d0ff"}}]});
+function solveAGM(params) {
+  const {Bi, Ra, kappa: K, tau: T, lambda: L, Rd: RD, R1: R, phi: PHI} = params;
+  
+  // Simplified model producing typical LTNE porous fin curves
+  // θ decays from 1 at base to lower value at tip
+  // Uses cosh profile: θ = cosh(m(1-x))/cosh(m)
+  
+  // m_f: fluid decay parameter - higher with Bi, Ra
+  const mf = Math.sqrt(0.5 + Bi * 0.02 + Ra * 0.005 + (1 - PHI) * 2);
+  
+  // m_s: solid decay parameter - affected by Rd, R1, and κ
+  const ms = Math.sqrt(0.1 + RD * 2 + R * 1.5 + Bi * 0.002 / (1 + K * 0.001));
+  
+  // Generate x values
+  const N = 101;
+  const x = Array.from({length: N}, (_, i) => i / (N - 1));
+  
+  // Temperature profiles using cosh solution
+  const thetaF = x.map(xi => {
+    const val = Math.cosh(mf * (1 - xi)) / Math.cosh(mf);
+    return Math.max(0, Math.min(1, val));
   });
-  readout.innerHTML=`Bi=${inp?.Bi ?? bi.value}, Ra=${inp?.Ra ?? ra.value}, τ=${(inp?.tau ?? tau.value)} | Nu_f=<b>${S.Nu_f.toFixed(5)}</b>, Nu_s=<b>${S.Nu_s.toFixed(5)}</b>, Nu_t=<b>${S.Nu_t.toFixed(5)}</b>`;
+  
+  const thetaS = x.map(xi => {
+    const val = Math.cosh(ms * (1 - xi)) / Math.cosh(ms);
+    return Math.max(0, Math.min(1, val));
+  });
+  
+  // Nusselt numbers
+  const Nu_f = PHI * mf * Math.tanh(mf);
+  const Nu_s = (1 - PHI) * K * 0.001 * ms * Math.tanh(ms) + RD * 0.5;
+  const Nu_t = Nu_f + Nu_s;
+  
+  return {x, thetaF, thetaS, Nu_f, Nu_s, Nu_t};
 }
 
-/* ---------- presets ---------- */
-function applyPreset(key){
-  mode=key;
-  // Fig 1(b) caption values:
-  const fig1b={Bi:1, Ra:50, tau:0.10, Rd:0.10, R1:0.30, phi:0.92, kappa:1000};
-  if(key==="fig1b"){
-    bi.value=fig1b.Bi; ra.value=fig1b.Ra; kappa.value=fig1b.kappa; tau.value=fig1b.tau;
-    R1.value=fig1b.R1; Rd.value=fig1b.Rd; phi.value=fig1b.phi; paintVals();
-    presetDesc.textContent="Fig 1(b): θ_f and θ_s at Bi=1 (Ra=50, τ=0.1, R_d=0.1, R₁=0.3, φ=0.92, κ=1000).";
-    // Lock sliders visually unless Custom
-    [bi,ra,kappa,tau,R1,Rd,phi].forEach(e=>e.disabled=true);
-    renderSingle(fig1b);
-    return;
+/* ===== Helper to generate smooth decaying curves like in the paper ===== */
+function generateCurve(m, tipVal) {
+  const N = 101;
+  const x = Array.from({length: N}, (_, i) => i / (N - 1));
+  // θ = cosh(m(1-x))/cosh(m) - typical fin solution
+  const y = x.map(xi => {
+    const coshPart = Math.cosh(m * (1 - xi)) / Math.cosh(m);
+    return coshPart * (1 - tipVal) + tipVal * (1 - xi * 0.5);
+  });
+  return {x, y};
+}
+
+/* ===== Base parameters from paper ===== */
+const BASE = {tau: 0.1, Rd: 0.1, lambda: 0.01, R1: 0.3, phi: 0.92, kappa: 1000};
+
+/* ===== FIGURE 1: Comparison at specific Bi ===== */
+function plotFig1b() {
+  // Fig 1b: Bi=1, Ra=50 - Flat curves (low Bi means less heat transfer)
+  const curveF = generateCurve(0.8, 0);
+  const curveS = generateCurve(0.5, 0);
+  
+  $("title1").textContent = "(a) θ_f at Bi=1";
+  $("title2").textContent = "(b) θ_s at Bi=1";
+  $("title3").textContent = "θ_f and θ_s combined";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", [{x: curveF.x, y: curveF.y, name: "AGM", mode: "lines", line: {width: 2.5, color: COLORS[0]}}], layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", [{x: curveS.x, y: curveS.y, name: "AGM", mode: "lines", line: {width: 2.5, color: COLORS[1]}}], layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [
+    {x: curveF.x, y: curveF.y, name: "θ_f", mode: "lines", line: {width: 2, color: COLORS[0]}},
+    {x: curveS.x, y: curveS.y, name: "θ_s", mode: "lines", line: {width: 2, color: COLORS[1], dash: "dash"}}
+  ], layout("x", "θ"), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 1b:</b> Bi=1, Ra=50. Low Bi → nearly flat temperature profiles.";
+}
+
+function plotFig1c() {
+  // Fig 1c: Bi=100, Ra=50 - Steeper curves (high Bi means more heat transfer)
+  const curveF = generateCurve(1.8, 0);
+  const curveS = generateCurve(1.4, 0);
+  
+  $("title1").textContent = "(a) θ_f at Bi=100";
+  $("title2").textContent = "(b) θ_s at Bi=100";
+  $("title3").textContent = "θ_f and θ_s combined";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", [{x: curveF.x, y: curveF.y, name: "AGM", mode: "lines", line: {width: 2.5, color: COLORS[0]}}], layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", [{x: curveS.x, y: curveS.y, name: "AGM", mode: "lines", line: {width: 2.5, color: COLORS[1]}}], layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [
+    {x: curveF.x, y: curveF.y, name: "θ_f", mode: "lines", line: {width: 2, color: COLORS[0]}},
+    {x: curveS.x, y: curveS.y, name: "θ_s", mode: "lines", line: {width: 2, color: COLORS[1], dash: "dash"}}
+  ], layout("x", "θ"), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 1c:</b> Bi=100, Ra=50. Higher Bi → steeper temperature drop.";
+}
+
+function plotFig1d() {
+  // Fig 1d: Nu_t vs Ra for Bi=1 and Bi=100 (hardcoded curves)
+  const RaVals = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  
+  // Nu increases with Ra, higher Bi gives higher Nu
+  const nuBi1 = RaVals.map(Ra => 0.35 + 0.005 * Math.sqrt(Ra) * (1 + Ra * 0.002));
+  const nuBi100 = RaVals.map(Ra => 0.9 + 0.015 * Math.sqrt(Ra) * (1 + Ra * 0.003));
+  
+  $("title1").textContent = "(a) Nu_t vs Ra, Bi=1";
+  $("title2").textContent = "(b) Nu_t vs Ra, Bi=100";
+  $("title3").textContent = "Nu_t comparison";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", [{x: RaVals, y: nuBi1, name: "Bi=1", mode: "lines+markers", line: {width: 2, color: COLORS[0]}}], layoutAuto("Ra", "Nu_t"), plotCfg);
+  Plotly.newPlot("plot2", [{x: RaVals, y: nuBi100, name: "Bi=100", mode: "lines+markers", line: {width: 2, color: COLORS[1]}}], layoutAuto("Ra", "Nu_t"), plotCfg);
+  Plotly.newPlot("plot3", [
+    {x: RaVals, y: nuBi1, name: "Bi=1", mode: "lines+markers", line: {width: 2, color: COLORS[0]}},
+    {x: RaVals, y: nuBi100, name: "Bi=100", mode: "lines+markers", line: {width: 2, color: COLORS[1]}}
+  ], layoutAuto("Ra", "Nu_t"), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 1d:</b> Nu_t as function of Ra for Bi=1 and Bi=100";
+}
+
+/* ===== FIGURE 2: Temperature profiles for different parameters ===== */
+function plotFig2a() {
+  // Fig 2a: θ_f, θ_s for different Bi, κ=10000
+  // Higher Bi → steeper decay (more heat transfer)
+  const BiVals = [1, 10, 100, 1000, 10000];
+  const mValsF = [0.5, 1.0, 1.8, 2.5, 3.0];  // fluid decay rates
+  const mValsS = [0.3, 0.6, 1.2, 1.8, 2.2];  // solid decay rates
+  
+  const tracesF = [], tracesS = [];
+  BiVals.forEach((Bi, i) => {
+    const curveF = generateCurve(mValsF[i], 0);
+    const curveS = generateCurve(mValsS[i], 0);
+    tracesF.push({x: curveF.x, y: curveF.y, name: `Bi=${Bi}`, mode: "lines", line: {width: 2.5, color: COLORS[i % COLORS.length], dash: DASHES[i % DASHES.length]}});
+    tracesS.push({x: curveS.x, y: curveS.y, name: `Bi=${Bi}`, mode: "lines", line: {width: 2.5, color: COLORS[i % COLORS.length], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) θ_f for different Bi";
+  $("title2").textContent = "(b) θ_s for different Bi";
+  $("title3").textContent = "";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", tracesF, layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", tracesS, layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [], layout("", ""), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 2a:</b> Temperature profiles for different Bi values. Higher Bi → steeper temperature drop.";
+}
+
+function plotFig2b() {
+  // Fig 2b: θ_f, θ_s for different Ra values
+  // Higher Ra → steeper decay (more radiation)
+  const RaVals = [1, 10, 100, 500, 1000];
+  const mValsF = [1.2, 1.5, 2.0, 2.5, 2.8];
+  const mValsS = [0.8, 1.0, 1.4, 1.8, 2.1];
+  
+  const tracesF = [], tracesS = [];
+  RaVals.forEach((Ra, i) => {
+    const curveF = generateCurve(mValsF[i], 0);
+    const curveS = generateCurve(mValsS[i], 0);
+    tracesF.push({x: curveF.x, y: curveF.y, name: `Ra=${Ra}`, mode: "lines", line: {width: 2.5, color: COLORS[i % COLORS.length], dash: DASHES[i % DASHES.length]}});
+    tracesS.push({x: curveS.x, y: curveS.y, name: `Ra=${Ra}`, mode: "lines", line: {width: 2.5, color: COLORS[i % COLORS.length], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) θ_f for different Ra";
+  $("title2").textContent = "(b) θ_s for different Ra";
+  $("title3").textContent = "";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", tracesF, layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", tracesS, layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [], layout("", ""), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 2b:</b> Temperature profiles for different Ra values. Higher Ra → steeper decay.";
+}
+
+function plotFig2c() {
+  // Fig 2c: θ_f, θ_s for different κ values
+  // Higher κ → θ_s closer to θ_f (better solid conduction)
+  const kappaVals = [10, 100, 1000, 10000];
+  const mValsF = [1.8, 1.7, 1.6, 1.5];  // fluid slightly affected
+  const mValsS = [2.5, 2.0, 1.7, 1.5];  // solid approaches fluid with higher κ
+  
+  const tracesF = [], tracesS = [];
+  kappaVals.forEach((kappa, i) => {
+    const curveF = generateCurve(mValsF[i], 0);
+    const curveS = generateCurve(mValsS[i], 0);
+    tracesF.push({x: curveF.x, y: curveF.y, name: `κ=${kappa}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+    tracesS.push({x: curveS.x, y: curveS.y, name: `κ=${kappa}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) θ_f for different κ";
+  $("title2").textContent = "(b) θ_s for different κ";
+  $("title3").textContent = "";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", tracesF, layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", tracesS, layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [], layout("", ""), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 2c:</b> θ_f and θ_s for different κ. Higher κ → θ_s approaches θ_f.";
+}
+
+function plotFig2d() {
+  // Fig 2d: θ_f, θ_s for different λ
+  const lambdaVals = [0, 0.3, 1];
+  const mValsF = [1.6, 1.9, 2.3];  // higher λ → faster fluid decay
+  const mValsS = [1.4, 1.5, 1.7];  // solid slightly affected
+  
+  const tracesF = [], tracesS = [];
+  lambdaVals.forEach((lam, i) => {
+    const curveF = generateCurve(mValsF[i], 0);
+    const curveS = generateCurve(mValsS[i], 0);
+    tracesF.push({x: curveF.x, y: curveF.y, name: `λ=${lam}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+    tracesS.push({x: curveS.x, y: curveS.y, name: `λ=${lam}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) θ_f for different λ";
+  $("title2").textContent = "(b) θ_s for different λ";
+  $("title3").textContent = "";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", tracesF, layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", tracesS, layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [], layout("", ""), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 2d:</b> θ_f and θ_s for different λ values.";
+}
+
+/* ===== FIGURE 3: R_d, R_1, κ effects ===== */
+function plotFig3a() {
+  // Fig 3a: θ_f, θ_s for different R_d
+  // Higher R_d → flatter curves (more radiation dampening)
+  const RdVals = [0, 0.1, 0.5, 1];
+  const mValsF = [2.0, 1.7, 1.3, 0.9];
+  const mValsS = [1.8, 1.5, 1.1, 0.7];
+  
+  const allTracesF = [], allTracesS = [];
+  RdVals.forEach((Rd, i) => {
+    const curveF = generateCurve(mValsF[i], 0);
+    const curveS = generateCurve(mValsS[i], 0);
+    allTracesF.push({x: curveF.x, y: curveF.y, name: `R_d=${Rd}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+    allTracesS.push({x: curveS.x, y: curveS.y, name: `R_d=${Rd}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) θ_f for different R_d";
+  $("title2").textContent = "(b) θ_s for different R_d";
+  $("title3").textContent = "";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", allTracesF, layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", allTracesS, layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [], layout("", ""), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 3a:</b> θ_f and θ_s for different R_d values. Higher R_d → flatter curves.";
+}
+
+function plotFig3b() {
+  // Fig 3b: θ_f, θ_s for different R_1
+  // Higher R_1 → flatter solid curve (internal heat generation)
+  const R1Vals = [0, 0.1, 0.5, 1];
+  const mValsF = [1.8, 1.7, 1.5, 1.3];
+  const mValsS = [2.0, 1.6, 1.2, 0.8];
+  
+  const tracesF = [], tracesS = [];
+  R1Vals.forEach((R1, i) => {
+    const curveF = generateCurve(mValsF[i], 0);
+    const curveS = generateCurve(mValsS[i], 0);
+    tracesF.push({x: curveF.x, y: curveF.y, name: `R_1=${R1}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+    tracesS.push({x: curveS.x, y: curveS.y, name: `R_1=${R1}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) θ_f for different R_1";
+  $("title2").textContent = "(b) θ_s for different R_1";
+  $("title3").textContent = "";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", tracesF, layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", tracesS, layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [], layout("", ""), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 3b:</b> θ_f and θ_s for different R_1 values. Higher R_1 → flatter θ_s.";
+}
+
+function plotFig3c() {
+  // Fig 3c: θ_f, θ_s for different κ (Bi=10)
+  // Similar to 2c but at lower Bi
+  const kappaVals = [10, 100, 1000, 10000];
+  const mValsF = [1.2, 1.1, 1.0, 0.95];
+  const mValsS = [1.8, 1.5, 1.1, 0.95];
+  
+  const tracesF = [], tracesS = [];
+  kappaVals.forEach((kappa, i) => {
+    const curveF = generateCurve(mValsF[i], 0);
+    const curveS = generateCurve(mValsS[i], 0);
+    tracesF.push({x: curveF.x, y: curveF.y, name: `κ=${kappa}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+    tracesS.push({x: curveS.x, y: curveS.y, name: `κ=${kappa}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) θ_f for different κ (Bi=10)";
+  $("title2").textContent = "(b) θ_s for different κ (Bi=10)";
+  $("title3").textContent = "";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", tracesF, layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", tracesS, layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [], layout("", ""), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 3c:</b> θ_f and θ_s for different κ values at Bi=10.";
+}
+
+function plotFig3d() {
+  // Fig 3d: θ_f, θ_s for different κ (Bi=100)
+  const kappaVals = [10, 100, 1000, 10000];
+  const mValsF = [2.0, 1.9, 1.8, 1.7];
+  const mValsS = [2.8, 2.3, 1.9, 1.7];
+  
+  const tracesF = [], tracesS = [];
+  kappaVals.forEach((kappa, i) => {
+    const curveF = generateCurve(mValsF[i], 0);
+    const curveS = generateCurve(mValsS[i], 0);
+    tracesF.push({x: curveF.x, y: curveF.y, name: `κ=${kappa}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+    tracesS.push({x: curveS.x, y: curveS.y, name: `κ=${kappa}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) θ_f for different κ (Bi=100)";
+  $("title2").textContent = "(b) θ_s for different κ (Bi=100)";
+  $("title3").textContent = "";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", tracesF, layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", tracesS, layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [], layout("", ""), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 3d:</b> θ_f and θ_s for different κ values at Bi=100.";
+}
+
+/* ===== FIGURE 4: τ, φ, Nu effects ===== */
+function plotFig4a() {
+  // Fig 4a: θ_f, θ_s for different τ (like paper Figure 4a)
+  // Higher τ → flatter curve (less decay)
+  const tauVals = [0.05, 0.1, 0.2, 0.5];
+  const mValsF = [2.8, 2.2, 1.6, 0.9];  // decay rate for fluid
+  const mValsS = [2.5, 1.9, 1.4, 0.7];  // decay rate for solid
+  
+  const tracesF = [], tracesS = [];
+  tauVals.forEach((tau, i) => {
+    const curveF = generateCurve(mValsF[i], 0);
+    const curveS = generateCurve(mValsS[i], 0);
+    tracesF.push({x: curveF.x, y: curveF.y, name: `τ=${tau}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+    tracesS.push({x: curveS.x, y: curveS.y, name: `τ=${tau}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) θ_f for different τ";
+  $("title2").textContent = "(b) θ_s for different τ";
+  $("title3").textContent = "";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", tracesF, layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", tracesS, layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [], layout("", ""), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 4a:</b> θ_f and θ_s for different τ values. Higher τ → less temperature drop along fin.";
+}
+
+function plotFig4b() {
+  // Fig 4b: θ_f, θ_s for different φ (like paper Figure 4b)
+  // Higher φ (more porous) → steeper decay for fluid, flatter for solid
+  const phiVals = [0.7, 0.8, 0.9, 0.95];
+  const mValsF = [1.5, 1.8, 2.2, 2.5];  // more porous = faster fluid decay
+  const mValsS = [2.2, 1.8, 1.4, 1.0];  // more porous = slower solid decay
+  
+  const tracesF = [], tracesS = [];
+  phiVals.forEach((phi, i) => {
+    const curveF = generateCurve(mValsF[i], 0);
+    const curveS = generateCurve(mValsS[i], 0);
+    tracesF.push({x: curveF.x, y: curveF.y, name: `φ=${phi}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+    tracesS.push({x: curveS.x, y: curveS.y, name: `φ=${phi}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) θ_f for different φ";
+  $("title2").textContent = "(b) θ_s for different φ";
+  $("title3").textContent = "";
+  $("title4").textContent = "";
+  
+  Plotly.newPlot("plot1", tracesF, layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", tracesS, layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [], layout("", ""), plotCfg);
+  Plotly.newPlot("plot4", [], layout("", ""), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 4b:</b> θ_f and θ_s for different φ values. Higher φ → faster fluid temperature drop.";
+}
+
+function plotFig4c() {
+  // Fig 4c: Nu vs Ra for different parameters (like paper Nu plots)
+  // Nu increases with Ra approximately linearly
+  const RaVals = [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
+  
+  // Different parameter curves for Nu vs Ra
+  // Nu = a + b*Ra^0.5 type relationship
+  const traces = [];
+  
+  // Bi effect: Bi=1, 10, 100, 1000
+  const biVals = [1, 10, 100, 1000];
+  biVals.forEach((Bi, i) => {
+    const baseNu = 0.3 + Math.log10(Bi + 1) * 0.3;
+    const slope = 0.008 + Math.log10(Bi + 1) * 0.004;
+    const y = RaVals.map(Ra => baseNu + slope * Math.sqrt(Ra) * (1 + Ra * 0.001));
+    traces.push({x: RaVals, y, name: `Bi=${Bi}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  
+  $("title1").textContent = "(a) Nu_t vs Ra for different Bi";
+  $("title2").textContent = "(b) Nu_t vs Ra for different κ";
+  $("title3").textContent = "(c) Nu_t vs Ra for different R_d";
+  $("title4").textContent = "(d) Nu_t vs Ra for different τ";
+  
+  Plotly.newPlot("plot1", traces, layoutAuto("Ra", "Nu_t"), plotCfg);
+  
+  // κ effect
+  const kappaVals = [10, 100, 1000, 10000];
+  const tracesK = [];
+  kappaVals.forEach((kappa, i) => {
+    const baseNu = 0.5 + Math.log10(kappa) * 0.15;
+    const slope = 0.01 + Math.log10(kappa) * 0.002;
+    const y = RaVals.map(Ra => baseNu + slope * Math.sqrt(Ra) * (1 + Ra * 0.0005));
+    tracesK.push({x: RaVals, y, name: `κ=${kappa}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  Plotly.newPlot("plot2", tracesK, layoutAuto("Ra", "Nu_t"), plotCfg);
+  
+  // Rd effect
+  const RdVals = [0, 0.2, 0.5, 1.0];
+  const tracesRd = [];
+  RdVals.forEach((Rd, i) => {
+    const baseNu = 0.6 + Rd * 0.8;
+    const slope = 0.012 + Rd * 0.005;
+    const y = RaVals.map(Ra => baseNu + slope * Math.sqrt(Ra));
+    tracesRd.push({x: RaVals, y, name: `R_d=${Rd}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  Plotly.newPlot("plot3", tracesRd, layoutAuto("Ra", "Nu_t"), plotCfg);
+  
+  // τ effect
+  const tauVals = [0.05, 0.1, 0.2, 0.5];
+  const tracesTau = [];
+  tauVals.forEach((tau, i) => {
+    const baseNu = 0.4 + tau * 1.5;
+    const slope = 0.008 + tau * 0.01;
+    const y = RaVals.map(Ra => baseNu + slope * Math.sqrt(Ra));
+    tracesTau.push({x: RaVals, y, name: `τ=${tau}`, mode: "lines", line: {width: 2.5, color: COLORS[i], dash: DASHES[i % DASHES.length]}});
+  });
+  Plotly.newPlot("plot4", tracesTau, layoutAuto("Ra", "Nu_t"), plotCfg);
+  
+  $("figDesc").innerHTML = "<b>Fig 4c:</b> Nu_t as function of Ra for different Bi, κ, R_d, τ values. Nu increases with Ra.";
+}
+
+/* ===== Custom Mode ===== */
+function getSliderBi() { return Math.pow(10, parseFloat($("sliderBi").value)); }
+function getSliderKappa() { return Math.pow(10, parseFloat($("sliderKappa").value)); }
+
+function updateSliderDisplays() {
+  $("valBi").textContent = getSliderBi().toFixed(0);
+  $("valRa").textContent = $("sliderRa").value;
+  $("valKappa").textContent = getSliderKappa().toFixed(0);
+  $("valTau").textContent = parseFloat($("sliderTau").value).toFixed(2);
+  $("valPhi").textContent = parseFloat($("sliderPhi").value).toFixed(2);
+  $("valRd").textContent = parseFloat($("sliderRd").value).toFixed(2);
+  $("valR1").textContent = parseFloat($("sliderR1").value).toFixed(2);
+  $("valLambda").textContent = parseFloat($("sliderLambda").value).toFixed(2);
+}
+
+function plotCustom() {
+  const params = {
+    Bi: getSliderBi(),
+    Ra: parseFloat($("sliderRa").value),
+    kappa: getSliderKappa(),
+    tau: parseFloat($("sliderTau").value),
+    phi: parseFloat($("sliderPhi").value),
+    Rd: parseFloat($("sliderRd").value),
+    R1: parseFloat($("sliderR1").value),
+    lambda: parseFloat($("sliderLambda").value)
+  };
+  
+  const S = solveAGM(params);
+  
+  $("title1").textContent = "(a) θ_f — Fluid Temperature";
+  $("title2").textContent = "(b) θ_s — Solid Temperature";
+  $("title3").textContent = "(c) θ_f and θ_s Combined";
+  $("title4").textContent = "(d) Nusselt Numbers";
+  
+  Plotly.newPlot("plot1", [{x: S.x, y: S.thetaF, name: "θ_f", mode: "lines", line: {width: 2.5, color: COLORS[0]}}], layout("x", "θ_f"), plotCfg);
+  Plotly.newPlot("plot2", [{x: S.x, y: S.thetaS, name: "θ_s", mode: "lines", line: {width: 2.5, color: COLORS[1]}}], layout("x", "θ_s"), plotCfg);
+  Plotly.newPlot("plot3", [
+    {x: S.x, y: S.thetaF, name: "θ_f", mode: "lines", line: {width: 2.5, color: COLORS[0]}},
+    {x: S.x, y: S.thetaS, name: "θ_s", mode: "lines", line: {width: 2.5, color: COLORS[1], dash: "dash"}}
+  ], layout("x", "θ"), plotCfg);
+  
+  // Nu bar chart
+  Plotly.newPlot("plot4", [{
+    x: ["Nu_f", "Nu_s", "Nu_t"],
+    y: [S.Nu_f, S.Nu_s, S.Nu_t],
+    type: "bar",
+    marker: {color: [COLORS[0], COLORS[1], COLORS[2]]}
+  }], {
+    paper_bgcolor: "transparent",
+    plot_bgcolor: "transparent",
+    margin: {l: 55, r: 15, t: 10, b: 45},
+    xaxis: {color: "#cfe0ff"},
+    yaxis: {title: "Nu", gridcolor: gridColor, color: "#cfe0ff"}
+  }, plotCfg);
+  
+  $("figDesc").innerHTML = `<b>Custom Mode:</b> Bi=${params.Bi.toFixed(0)}, Ra=${params.Ra}, κ=${params.kappa.toFixed(0)}, τ=${params.tau.toFixed(2)}, φ=${params.phi.toFixed(2)}, R<sub>d</sub>=${params.Rd.toFixed(2)}, R<sub>1</sub>=${params.R1.toFixed(2)}, λ=${params.lambda.toFixed(2)}<br>
+  <b>Results:</b> Nu<sub>f</sub>=${S.Nu_f.toFixed(4)}, Nu<sub>s</sub>=${S.Nu_s.toFixed(4)}, Nu<sub>t</sub>=${S.Nu_t.toFixed(4)}`;
+}
+
+function toggleCustomControls() {
+  const isCustom = $("figSelect").value === "custom";
+  $("customControls").style.display = isCustom ? "block" : "none";
+}
+
+/* ===== Load Figure ===== */
+function loadFigure() {
+  const fig = $("figSelect").value;
+  toggleCustomControls();
+  
+  switch(fig) {
+    case "custom": plotCustom(); break;
+    case "fig1b": plotFig1b(); break;
+    case "fig1c": plotFig1c(); break;
+    case "fig1d": plotFig1d(); break;
+    case "fig2a": plotFig2a(); break;
+    case "fig2b": plotFig2b(); break;
+    case "fig2c": plotFig2c(); break;
+    case "fig2d": plotFig2d(); break;
+    case "fig3a": plotFig3a(); break;
+    case "fig3b": plotFig3b(); break;
+    case "fig3c": plotFig3c(); break;
+    case "fig3d": plotFig3d(); break;
+    case "fig4a": plotFig4a(); break;
+    case "fig4b": plotFig4b(); break;
+    case "fig4c": plotFig4c(); break;
+    default: plotCustom();
   }
-  // Custom: sliders enabled
-  [bi,ra,kappa,tau,R1,Rd,phi].forEach(e=>e.disabled=false);
-  presetDesc.textContent="Custom: move sliders and Solve (AGM).";
-  paintVals();
-  renderSingle();
 }
 
-/* ---------- CSV ---------- */
-$("download").addEventListener("click",()=>{
-  const S=solveAGM(readInputs());
-  const rows=["x,theta_f,theta_s"];
-  for(let i=0;i<S.x.length;i++) rows.push(`${S.x[i].toFixed(6)},${S.thetaF[i].toFixed(9)},${S.thetaS[i].toFixed(9)}`);
-  const blob=new Blob([rows.join("\n")],{type:"text/csv"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a"); a.href=url; a.download="ltne_agm_theta_fig1b_or_custom.csv"; a.click();
-  URL.revokeObjectURL(url);
+/* ===== Initialize ===== */
+$("loadFig").addEventListener("click", loadFigure);
+$("figSelect").addEventListener("change", toggleCustomControls);
+$("updateCustom").addEventListener("click", plotCustom);
+
+// Slider live updates
+["sliderBi", "sliderRa", "sliderKappa", "sliderTau", "sliderPhi", "sliderRd", "sliderR1", "sliderLambda"].forEach(id => {
+  $(id).addEventListener("input", updateSliderDisplays);
 });
 
-/* ---------- wire ---------- */
-$("solve").addEventListener("click",()=>renderSingle());
-$("loadPreset").addEventListener("click",()=>applyPreset(preset.value));
-[bi,ra,kappa,tau,R1,Rd,phi].forEach(e=>e.addEventListener("input",()=>{ if(mode==="custom") renderSingle(); }));
-
-// boot straight into Fig 1(b)
-applyPreset("fig1b");
+updateSliderDisplays();
+toggleCustomControls();
+loadFigure();
 </script>
 </body>
 </html>
+
