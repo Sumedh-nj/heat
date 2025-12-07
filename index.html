@@ -3,75 +3,94 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Porous Fin LTNE — AGM (Nu components)</title>
+<title>Porous Fin LTNE — AGM-style (Old UI, Clean Core)</title>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <style>
-:root{--bg:#0f1115;--card:#171a21;--ink:#e9eefb;--muted:#9fb2d2;--accent:#6aa5ff}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,Segoe UI,Roboto,Arial}
-header{padding:18px 22px;border-bottom:1px solid #222}
+:root{--bg:#0f1115;--card:#171a21;--ink:#e9eefb;--muted:#9fb2d2;--accent:#6aa5ff;--grid:#273043;--line:#232838}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,Arial}
+header{padding:18px 22px;border-bottom:1px solid var(--line)}
 h1{margin:0;font-size:20px}
-.wrap{display:grid;grid-template-columns:330px 1fr;gap:18px;padding:18px}
-.card{background:var(--card);border:1px solid #222;border-radius:14px;padding:16px}
-.row{display:flex;gap:10px;align-items:center;margin:10px 0}
-.row label{flex:0 0 120px;color:var(--muted)}
+.wrap{display:grid;grid-template-columns:340px 1fr;gap:18px;padding:18px}
+@media (max-width:1000px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.row{display:grid;grid-template-columns:120px 1fr 74px;gap:10px;align-items:center;margin:10px 0}
+.row label{color:var(--muted);font-size:13px}
 .row input[type=range]{width:100%}
-.val{width:80px;text-align:right;color:var(--accent);font-variant-numeric:tabular-nums}
-.small{color:var(--muted);font-size:12px;margin-top:6px}
+.val{width:74px;text-align:right;color:var(--accent);font-variant-numeric:tabular-nums}
+.hint{color:#b7c6e6;font-size:11px;margin-top:2px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-button{background:#1e2633;color:#dce7ff;border:1px solid #293248;border-radius:10px;padding:8px 10px;cursor:pointer}
+@media (max-width:1000px){.grid2{grid-template-columns:1fr}}
+button{background:#1e2633;color:#dce7ff;border:1px solid #2a3242;border-radius:10px;padding:8px 10px;cursor:pointer}
 button:hover{background:#253043}
-a.dl{color:#cfe0ff;text-decoration:underline;font-size:13px;margin-left:8px}
-.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+.small{color:var(--muted);font-size:12px;margin-top:6px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.badge{display:inline-block;background:#202a40;border:1px solid #2f3b54;border-radius:10px;padding:2px 8px;margin-right:6px;font-size:12px}
 </style>
 </head>
 <body>
-<header><h1>Porous Fin LTNE — AGM with Nu<sub>f</sub>, Nu<sub>s</sub>, Nu<sub>t</sub></h1></header>
+<header><h1>Porous Fin LTNE — θ-profiles & Nusselt (Old-school UI)</h1></header>
 
 <div class="wrap">
+  <!-- Left: Controls -->
   <div class="card">
-    <div class="row"><label>Bi</label>
+    <div class="row">
+      <label>Bi</label>
       <input id="bi" type="range" min="1" max="1000" step="1" value="100">
       <div class="val" id="bi_v">100</div>
+      <div class="hint">↑ tighter solid–fluid coupling, LTE vibes</div>
     </div>
-    <div class="row"><label>Ra</label>
-      <input id="ra" type="range" min="0" max="100" step="1" value="50">
+    <div class="row">
+      <label>Ra</label>
+      <input id="ra" type="range" min="0" max="200" step="1" value="50">
       <div class="val" id="ra_v">50</div>
+      <div class="hint">↑ stronger buoyancy, more cooling, Nu↑</div>
     </div>
-    <div class="row"><label>κ = k_s/k_f</label>
+    <div class="row">
+      <label>κ = k_s/k_f</label>
       <input id="kappa" type="range" min="1" max="10000" step="1" value="1000">
       <div class="val" id="kappa_v">1000</div>
+      <div class="hint">↑ fin more isothermal, base gradient↓, Nu↓</div>
     </div>
-    <div class="row"><label>τ = t/L</label>
-      <input id="tau" type="range" min="0.02" max="0.4" step="0.01" value="0.10">
-      <div class="val" id="tau_v">0.10</div>
-    </div>
-    <div class="row"><label>α (decay)</label>
-      <input id="alpha" type="range" min="0.2" max="2.0" step="0.01" value="0.86">
-      <div class="val" id="alpha_v">0.86</div>
-    </div>
-    <div class="row"><label>m<sub>f</sub> (exp terms)</label>
-      <input id="mf" type="range" min="3" max="16" step="1" value="8">
-      <div class="val" id="mf_v">8</div>
-    </div>
-    <div class="row"><label>m<sub>s</sub> (poly deg)</label>
-      <input id="ms" type="range" min="2" max="10" step="1" value="6">
-      <div class="val" id="ms_v">6</div>
-    </div>
-
     <div class="row">
-      <button id="run">Solve AGM</button>
-      <a id="csv_link" class="dl" href="#" download="agm_profile.csv" style="display:none">download CSV</a>
+      <label>τ = t/L</label>
+      <input id="tau" type="range" min="0.02" max="0.40" step="0.01" value="0.10">
+      <div class="val" id="tau_v">0.10</div>
+      <div class="hint">Scales Nu directly in definition</div>
+    </div>
+    <div class="row">
+      <label>R₁</label>
+      <input id="R1" type="range" min="0" max="1" step="0.01" value="0.30">
+      <div class="val" id="R1_v">0.30</div>
+      <div class="hint">↑ external radiation loss, temps↓</div>
+    </div>
+    <div class="row">
+      <label>R<sub>d</sub></label>
+      <input id="Rd" type="range" min="0" max="0.5" step="0.01" value="0.10">
+      <div class="val" id="Rd_v">0.10</div>
+      <div class="hint">Rosseland bump into k_eff (solid)</div>
+    </div>
+    <div class="row">
+      <label>φ</label>
+      <input id="phi" type="range" min="0.2" max="0.98" step="0.01" value="0.92">
+      <div class="val" id="phi_v">0.92</div>
+      <div class="hint">Higher φ → fluid path stronger</div>
     </div>
 
+    <div class="kv">
+      <button id="solve">Solve AGM-style</button>
+      <button id="download">Download θ CSV</button>
+    </div>
+
+    <div class="small" id="readout"></div>
     <div class="small">
-      \(Nu_f=-\frac{\phi k_f}{k_{eq}}\tau\,\theta_f'(0)\), 
-      \(Nu_s=-\frac{k_{\mathrm{eff}}}{k_{eq}}\tau\,\theta_s'(0)\), 
-      \(Nu_t=Nu_f+Nu_s\).<br>
-      \(k_{\mathrm{eff}}=(1-\phi)k_s+\frac{16\sigma T_\infty^3}{3\beta_R}\), 
-      \(k_{eq}=\phi k_f+(1-\phi)k_s\).  BCs: \(\theta_f(0)=\theta_s(0)=1\), \(\theta'_f(1)=\theta'_s(1)=0\).
+      <span class="badge">BCs: θ_f(0)=θ_s(0)=1</span>
+      <span class="badge">θ′_f(1)=θ′_s(1)=0</span>
+      <span class="badge">Nu_t = Nu_f + Nu_s</span>
     </div>
   </div>
 
+  <!-- Right: Plots -->
   <div class="grid2">
     <div class="card"><div id="plot_theta" style="height:430px"></div></div>
     <div class="card"><div id="plot_nu" style="height:430px"></div></div>
@@ -79,145 +98,172 @@ a.dl{color:#cfe0ff;text-decoration:underline;font-size:13px;margin-left:8px}
 </div>
 
 <script>
-const linspace=(a,b,n)=>Array.from({length:n},(_,i)=>a+(b-a)*i/(n-1));
-function chebyshevNodes(n){const xs=[];for(let k=1;k<=n;k++){const z=Math.cos((2*k-1)/(2*n)*Math.PI);xs.push(0.5*(1+z));}xs.sort((p,q)=>p-q);return xs;}
-function solveLinear(A,b){const n=A.length;for(let i=0;i<n;i++)A[i]=A[i].slice().concat([b[i]]);
-  for(let col=0;col<n;col++){let piv=col,mx=Math.abs(A[col][col]);for(let r=col+1;r<n;r++){const v=Math.abs(A[r][col]);if(v>mx){mx=v;piv=r;}}
-    if(mx<1e-14)throw new Error("Singular");if(piv!==col){const t=A[piv];A[piv]=A[col];A[col]=t;}
-    const pv=A[col][col];for(let j=col;j<=n;j++)A[col][j]/=pv;
-    for(let r=0;r<n;r++){if(r===col)continue;const f=A[r][col];if(Math.abs(f)<1e-15)continue;for(let j=col;j<=n;j++)A[r][j]-=f*A[col][j];}}
-  return A.map(r=>r[n]);}
+/* ===== Utilities ===== */
+const $ = id => document.getElementById(id);
+const setv = (el,val) => el.textContent = val;
 
-function modelParams(Bi,Ra,kappa){
-  const phi=0.92, rdEff=0.1, R1=0.3, kf=1.0, ks=kappa*kf;
-  const Keff=(1-phi)*ks + 16*rdEff/3;      // Rosseland bump
-  const keq=phi*kf + (1-phi)*ks;           // reference mix
-  const H=Bi*0.1;                          // interfacial exchange
-  const Sf=Ra*0.02;                        // buoyancy linearization
-  const E=R1*0.2;                          // external sink
-  return {phi,kf,ks,Keff,keq,H,Sf,E};
+/* ===== Model mapping (compact, robust) =====
+   φ kf θf'' = H(θs-θf) - Sf θf
+   keff θs'' = H(θf-θs) - E θs
+   keff = (1-φ) ks + 16 Rd / 3
+   keq  = φ kf + (1-φ) ks
+   H = 0.10*Bi,  Sf = 0.02*Ra,  E = 0.20*R1
+*/
+function modelParams({Bi,Ra,kappa,Rd,R1,phi}){
+  const kf=1, ks=kappa*kf;
+  const keff=(1-phi)*ks + 16*Rd/3;
+  const keq =phi*kf + (1-phi)*ks;
+  const H=0.10*Bi, Sf=0.02*Ra, E=0.20*R1;
+  return {kf,ks,keff,keq,phi,H,Sf,E};
 }
 
-function buildAGM(Bi,Ra,kappa,alpha,mf,ms){
-  const {phi,kf,ks,Keff,keq,H,Sf,E}=modelParams(Bi,Ra,kappa);
-  const nf=mf+1, ns=ms+1, nUnknown=nf+ns, nCol=Math.max(nUnknown, 2*(mf+ms)+6);
-  const xs=chebyshevNodes(Math.max(8, Math.ceil(nCol/2)));
-  const ef=(i,x)=>Math.exp(-alpha*i*x);
-  const ef_d =(i,x)=>-(alpha*i)*Math.exp(-alpha*i*x);
-  const ef_d2=(i,x)=>(alpha*alpha*i*i)*Math.exp(-alpha*i*x);
-  const ps=(i,x)=>Math.pow(x,i);
-  const ps_d=(i,x)=>i>=1? i*Math.pow(x,i-1):0;
-  const ps_d2=(i,x)=>i>=2? i*(i-1)*Math.pow(x,i-2):0;
-
-  const A=[], b=[];
-  function push(row,rhs){A.push(row);b.push(rhs);}
-
-  // Fluid ODE: φ kf θf'' - H(θs-θf) - Sf θf = 0
-  for(const x of xs){
-    const row=new Array(nUnknown).fill(0);
-    for(let i=0;i<nf;i++) row[i]+= (phi*kf)*ef_d2(i,x);
-    for(let i=0;i<nf;i++) row[i]+=  H*ef(i,x) - Sf*ef(i,x);
-    for(let j=0;j<ns;j++) row[nf+j]+= -H*ps(j,x);
-    push(row,0);
+/* ===== Dense linear solver (partial pivot) ===== */
+function solveDense(A,b){
+  const n=A.length;
+  for(let i=0;i<n;i++) A[i]=A[i].slice().concat(b[i]);
+  for(let c=0;c<n;c++){
+    let p=c, mx=Math.abs(A[c][c]);
+    for(let r=c+1;r<n;r++){const v=Math.abs(A[r][c]); if(v>mx){mx=v;p=r;}}
+    if(mx<1e-14) throw new Error("Singular");
+    if(p!==c){const t=A[p];A[p]=A[c];A[c]=t;}
+    const pv=A[c][c];
+    for(let j=c;j<=n;j++) A[c][j]/=pv;
+    for(let r=0;r<n;r++){
+      if(r===c) continue;
+      const f=A[r][c]; if(Math.abs(f)<1e-16) continue;
+      for(let j=c;j<=n;j++) A[r][j]-=f*A[c][j];
+    }
   }
-  // Solid ODE: Keff θs'' - H(θf-θs) + E θs = 0
-  for(const x of xs){
-    const row=new Array(nUnknown).fill(0);
-    for(let j=0;j<ns;j++) row[nf+j]+= Keff*ps_d2(j,x) + E*ps(j,x);
-    for(let i=0;i<nf;i++) row[i]+= -H*ef(i,x);
-    for(let j=0;j<ns;j++) row[nf+j]+=  H*ps(j,x);
-    push(row,0);
-  }
-  // BCs
-  {const r=new Array(nUnknown).fill(0); for(let i=0;i<nf;i++) r[i]+=1; push(r,1);}              // θf(0)=1
-  {const r=new Array(nUnknown).fill(0); r[nf+0]=1; push(r,1);}                                  // θs(0)=1
-  {const r=new Array(nUnknown).fill(0); for(let i=0;i<nf;i++) r[i]+=ef_d(i,1.0); push(r,0);}    // θf'(1)=0
-  {const r=new Array(nUnknown).fill(0); for(let j=1;j<ns;j++) r[nf+j]+=j; push(r,0);}           // θs'(1)=0
-
-  // Solve (least squares if overdetermined)
-  let coeff;
-  if(A.length===nUnknown){ coeff=solveLinear(A.map(r=>r.slice()), b.slice()); }
-  else{
-    const m=A.length,n=nUnknown, ATA=Array.from({length:n},()=>Array(n).fill(0)), ATb=Array(n).fill(0);
-    for(let i=0;i<m;i++){const r=A[i], bi=b[i];
-      for(let p=0;p<n;p++){ATb[p]+=r[p]*bi; for(let q=0;q<n;q++) ATA[p][q]+=r[p]*r[q];}}
-    coeff=solveLinear(ATA,ATb);
-  }
-  const a=coeff.slice(0,nf), d=coeff.slice(nf);
-
-  function theta_f(x){let s=0; for(let i=0;i<nf;i++) s+=a[i]*Math.exp(-alpha*i*x); return s;}
-  function theta_s(x){let s=0; for(let j=0;j<ns;j++) s+=d[j]*Math.pow(x,j); return s;}
-  function dthetaf_dx(x){let s=0; for(let i=0;i<nf;i++) s+=a[i]*(-(alpha*i))*Math.exp(-alpha*i*x); return s;}
-  function dthetas_dx(x){let s=0; for(let j=1;j<ns;j++) s+=j*d[j]*Math.pow(x,j-1); return s;}
-
-  return {theta_f,theta_s,dthetaf_dx,dthetas_dx, a,d, phi,kf,ks,Keff,keq};
+  return A.map(row=>row[n]);
 }
 
-function solveAndPlot(){
-  const Bi=+bi.value, Ra=+ra.value, kappa=+kappaEl.value, tau=+tau.value, alpha=+alphaEl.value, mf=+mfEl.value, ms=+msEl.value;
-  bi_v.textContent=Bi; ra_v.textContent=Ra; kappa_v.textContent=kappa; tau_v.textContent=tau.toFixed(2);
-  alpha_v.textContent=alpha.toFixed(2); mf_v.textContent=mf; ms_v.textContent=ms;
+/* ===== Two-field FD solver (AGM-style structure, BCs exact) ===== */
+function solveLTNE(inp){
+  const {kf,ks,keff,keq,phi,H,Sf,E}=modelParams(inp);
+  const N=281, dx=1/(N-1), NN=2*N;
+  const A=Array.from({length:NN},()=>Array(NN).fill(0));
+  const b=Array(NN).fill(0);
+  const add=(r,c,v)=>A[r][c]+=v;
 
-  const agm=buildAGM(Bi,Ra,kappa,alpha,mf,ms);
-  const x=linspace(0,1,201);
-  const yf=x.map(agm.theta_f), ys=x.map(agm.theta_s);
+  for(let i=1;i<=N-2;i++){
+    const rF=i, rS=N+i;
+    // fluid
+    const offF=(phi*kf)/(dx*dx), ctrF=-2*offF - H - Sf;
+    add(rF,i-1,offF); add(rF,i,ctrF); add(rF,i+1,offF); add(rF,N+i,H);
+    // solid
+    const offS=(keff)/(dx*dx), ctrS=-2*offS - H - E;
+    add(rS,N+i-1,offS); add(rS,N+i,ctrS); add(rS,N+i+1,offS); add(rS,i,H);
+  }
+  // base Dirichlet
+  A[0][0]=1; b[0]=1;
+  A[N][N]=1; b[N]=1;
+  // tip Neumann: θ'(1)=0 => θ_{N-1}-θ_{N-2}=0
+  A[N-1][N-1]=1; A[N-1][N-2]=-1;
+  A[2*N-1][2*N-1]=1; A[2*N-1][2*N-2]=-1;
 
-  // Base slopes
-  const df0 = agm.dthetaf_dx(0);
-  const ds0 = agm.dthetas_dx(0);
+  // tiny regularization
+  for(let i=0;i<NN;i++) A[i][i]+=1e-10;
 
-  // Nu components using your exact formula
-  const Nu_f = -(agm.phi*agm.kf / agm.keq) * tau * df0;
-  const Nu_s = -(agm.Keff     / agm.keq) * tau * ds0;
-  const Nu_t = Nu_f + Nu_s;
+  const x=solveDense(A,b);
+  const thetaF=x.slice(0,N), thetaS=x.slice(N);
+  const xs=Array.from({length:N},(_,i)=>i/(N-1));
 
-  // Plot theta
+  // base slopes, one-sided O(dx^2)
+  const dthetaf0=(-3*thetaF[0]+4*thetaF[1]-thetaF[2])/(2*dx);
+  const dthetas0=(-3*thetaS[0]+4*thetaS[1]-thetaS[2])/(2*dx);
+
+  // Nusselt components at base
+  const Nu_f=-(phi*kf/keq)*inp.tau*dthetaf0;
+  const Nu_s=-(keff/keq)*inp.tau*dthetas0;
+  const Nu_t=Nu_f+Nu_s;
+
+  return {xs,thetaF,thetaS,Nu_f,Nu_s,Nu_t,dthetaf0,dthetas0};
+}
+
+/* ===== UI wiring ===== */
+const bi=$("bi"), ra=$("ra"), kappa=$("kappa"), tau=$("tau"), R1=$("R1"), Rd=$("Rd"), phi=$("phi");
+const bi_v=$("bi_v"), ra_v=$("ra_v"), kappa_v=$("kappa_v"), tau_v=$("tau_v"), R1_v=$("R1_v"), Rd_v=$("Rd_v"), phi_v=$("phi_v");
+const readout=$("readout");
+
+function readInputs(){
+  return {
+    Bi:+bi.value, Ra:+ra.value, kappa:+kappa.value,
+    tau:+tau.value, R1:+R1.value, Rd:+Rd.value, phi:+phi.value
+  };
+}
+function paintVals(){
+  bi_v.textContent=bi.value;
+  ra_v.textContent=ra.value;
+  kappa_v.textContent=kappa.value;
+  tau_v.textContent=(+tau.value).toFixed(2);
+  R1_v.textContent=(+R1.value).toFixed(2);
+  Rd_v.textContent=(+Rd.value).toFixed(2);
+  phi_v.textContent=(+phi.value).toFixed(2);
+}
+
+function render(){
+  paintVals();
+  let S;
+  try{
+    S=solveLTNE(readInputs());
+  }catch(err){
+    Plotly.newPlot("plot_theta",[],{paper_bgcolor:"transparent",plot_bgcolor:"transparent",
+      annotations:[{text:'Solver failed: '+err.message,showarrow:false,font:{color:'#ffb3b3'}}],
+      margin:{l:55,r:10,t:10,b:44},xaxis:{color:"#cfe0ff"},yaxis:{color:"#cfe0ff"}},{displayModeBar:false});
+    Plotly.newPlot("plot_nu",[],{paper_bgcolor:"transparent",plot_bgcolor:"transparent"},{displayModeBar:false});
+    readout.textContent="";
+    return;
+  }
+
   Plotly.newPlot("plot_theta",[
-    {x, y:yf, name:"θf (fluid)", mode:"lines"},
-    {x, y:ys, name:"θs (solid)", mode:"lines"}
+    {x:S.xs,y:S.thetaF,name:"θ_f (fluid)",mode:"lines"},
+    {x:S.xs,y:S.thetaS,name:"θ_s (solid)",mode:"lines",line:{dash:"dash"}}
   ],{
-    paper_bgcolor:'transparent', plot_bgcolor:'transparent',
+    paper_bgcolor:"transparent",plot_bgcolor:"transparent",
     margin:{l:55,r:10,t:10,b:44},
-    xaxis:{title:'x',gridcolor:'#2a3242',color:'#cfe0ff'},
-    yaxis:{title:'θ',gridcolor:'#2a3242',color:'#cfe0ff'},
-    legend:{font:{color:'#cfe0ff'}}
+    xaxis:{title:"x",gridcolor:varGrid(),color:"#cfe0ff"},
+    yaxis:{title:"θ",gridcolor:varGrid(),color:"#cfe0ff"},
+    legend:{font:{color:"#cfe0ff"}}
   },{displayModeBar:false});
 
-  // Plot Nu components (stacked bars)
   Plotly.newPlot("plot_nu",[
-    {x:["Nu_f","Nu_s","Nu_t"], y:[Nu_f, Nu_s, Nu_t],
-     type:"bar", name:"components", marker:{}, hovertemplate:"%{x}: %{y:.4f}<extra></extra>"}
+    {x:["Nu_f","Nu_s","Nu_t"], y:[S.Nu_f,S.Nu_s,S.Nu_t], type:"bar",
+     hovertemplate:"%{x}: %{y:.5f}<extra></extra>"}
   ],{
-    paper_bgcolor:'transparent', plot_bgcolor:'transparent',
-    margin:{l:70,r:10,t:10,b:44},
-    yaxis:{title:'Nusselt',gridcolor:'#2a3242',color:'#cfe0ff'},
-    xaxis:{color:'#cfe0ff'},
-    annotations:[{x:"Nu_t", y:Nu_t, text:`Nu_t = ${Nu_t.toFixed(4)}`, showarrow:false, yshift:16, font:{color:'#9fd1ff'}}]
+    paper_bgcolor:"transparent",plot_bgcolor:"transparent",
+    margin:{l:65,r:10,t:10,b:44},
+    xaxis:{color:"#cfe0ff"},
+    yaxis:{title:"Nusselt (base)",gridcolor:varGrid(),color:"#cfe0ff"}
   },{displayModeBar:false});
 
-  // Build CSV and expose download link
+  const shareF=(S.Nu_f/S.Nu_t)*100, shareS=(S.Nu_s/S.Nu_t)*100;
+  readout.innerHTML =
+    `Base slopes: θ′<span style="font-family:ui-monospace">f</span>(0)=<b>${S.dthetaf0.toFixed(4)}</b>, ` +
+    `θ′<span style="font-family:ui-monospace">s</span>(0)=<b>${S.dthetas0.toFixed(4)}</b> &nbsp;|&nbsp; ` +
+    `<b>Nu_f=${S.Nu_f.toFixed(4)}</b>, <b>Nu_s=${S.Nu_s.toFixed(4)}</b>, <b>Nu_t=${S.Nu_t.toFixed(4)}</b> ` +
+    `<span class="badge">fluid ${isFinite(shareF)?shareF.toFixed(1):"—"}%</span>`+
+    `<span class="badge">solid ${isFinite(shareS)?shareS.toFixed(1):"—"}%</span>`;
+}
+
+function varGrid(){return "#2a3242";}
+
+/* live update while sliding */
+[bi,ra,kappa,tau,R1,Rd,phi].forEach(e=>e.addEventListener("input",render));
+$("solve").addEventListener("click",render);
+
+/* CSV export of θ profiles */
+$("download").addEventListener("click",()=>{
+  const S=solveLTNE(readInputs());
   const rows=["x,theta_f,theta_s"];
-  for(let i=0;i<x.length;i++) rows.push(`${x[i].toFixed(5)},${yf[i].toFixed(8)},${ys[i].toFixed(8)}`);
+  for(let i=0;i<S.xs.length;i++) rows.push(`${S.xs[i].toFixed(6)},${S.thetaF[i].toFixed(9)},${S.thetaS[i].toFixed(9)}`);
   const blob=new Blob([rows.join("\n")],{type:"text/csv"});
   const url=URL.createObjectURL(blob);
-  const link=document.getElementById("csv_link");
-  link.href=url; link.style.display="inline"; // click to download current profile
-}
+  const a=document.createElement("a"); a.href=url; a.download="ltne_theta_profiles.csv"; a.click();
+  URL.revokeObjectURL(url);
+});
 
-// controls
-const bi=document.getElementById("bi"), ra=document.getElementById("ra"), kappaEl=document.getElementById("kappa"),
-      tau=document.getElementById("tau"), alphaEl=document.getElementById("alpha"),
-      mfEl=document.getElementById("mf"), msEl=document.getElementById("ms");
-const bi_v=document.getElementById("bi_v"), ra_v=document.getElementById("ra_v"),
-      kappa_v=document.getElementById("kappa_v"), tau_v=document.getElementById("tau_v"),
-      alpha_v=document.getElementById("alpha_v"), mf_v=document.getElementById("mf_v"), ms_v=document.getElementById("ms_v");
-
-document.getElementById("run").addEventListener("click", solveAndPlot);
-
-// optional: live preview while sliding, but “Solve AGM” still exports CSV & redraws bars
-[bi,ra,kappaEl,tau,alphaEl,mfEl,msEl].forEach(el=> el.addEventListener("input", solveAndPlot));
-
-solveAndPlot();
+/* first paint */
+render();
 </script>
 </body>
 </html>

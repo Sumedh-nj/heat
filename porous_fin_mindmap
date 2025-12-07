@@ -1,0 +1,26 @@
+digraph Mindmap {
+	bgcolor=white rankdir=TB
+	A [label="1. Physical Model
+Porous fin, LTNE" color=black fillcolor="#f2f2f2" shape=box style="rounded,filled"]
+	B [label="2. Porous Flow Physics
+Darcy + Boussinesq" color=black fillcolor="#f2f2f2" shape=box style="rounded,filled"]
+	C [label="3. Energy Equations
+Fluid + Solid" color=black fillcolor="#f2f2f2" shape=box style="rounded,filled"]
+	D [label="4. Radiation + Linearisation" color=black fillcolor="#f2f2f2" shape=box style="rounded,filled"]
+	E [label="5. Non-Dimensionalisation
+θ, Bi, Ra, κ, φ, Rd, R1, τ" color=black fillcolor="#f2f2f2" shape=box style="rounded,filled"]
+	F [label="6. LTNE ODE System
+Coupled ODEs + BCs" color=black fillcolor="#f2f2f2" shape=box style="rounded,filled"]
+	G [label="7. AGM Method
+Trial functions + collocation" color=black fillcolor="#f2f2f2" shape=box style="rounded,filled"]
+	H [label="8. Outputs
+θf, θs, Nu_f, Nu_s, Nu_t" color=black fillcolor="#f2f2f2" shape=box style="rounded,filled"]
+	A -> B
+	B -> C
+	C -> D
+	D -> F
+	A -> E
+	E -> F
+	F -> G
+	G -> H
+}
